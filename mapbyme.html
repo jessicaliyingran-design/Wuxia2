@@ -191,6 +191,9 @@ html,body{height:100%;overflow:hidden;font-family:'EB Garamond',Georgia,'Songti 
 .p-card-resizer.resizing::after{
   background:var(--red);width:2px;
 }
+/* outside Edit mode the divider is fixed — no resize cursor, no hover cue */
+.p-card-resizer.locked{cursor:default;}
+.p-card-resizer.locked:hover::after{background:rgba(20,17,14,.12);width:1px;}
 .p-card-body{
   padding:14px 16px 12px;
   flex:1;min-width:0;
@@ -1685,7 +1688,7 @@ const DRAWING_SRC = "data:image/png;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZ
 // One version token gates every saved override. Export bumps it so a freshly
 // exported file (which already has all edits baked into PARTICIPANTS) ignores
 // this browser's stale localStorage instead of double-applying it.
-const SV = 'e1784830961287';
+const SV = 'e1784831681048';
 const EXTRA_KEY    = 'extra_participants_' + SV;
 const APPENDED_KEY = 'appended_works_' + SV;
 const DELETED_KEY  = 'deleted_flags_' + SV;       // ids of whole flags removed
@@ -2094,7 +2097,7 @@ function openPanel(id) {
     }
 
     enableCardDrag(card, p.id);
-    attachCardResizer(card, id, wid);
+    attachCardResizer(card, id, wid, w);
     left.appendChild(card);
 
     // This participant's analysis text + tags (card is now in the DOM)
@@ -2550,6 +2553,8 @@ function toggleEdit() {
     el.contentEditable = editMode ? 'true' : 'false';
     el.classList.toggle('editable-on', editMode);
   });
+  // column-width drag only works in Edit mode
+  document.querySelectorAll('.p-card-resizer').forEach(el => el.classList.toggle('locked', !editMode));
   // intro & insight prose become editable in edit mode
   setStoryEditable(editMode);
 }
@@ -2713,6 +2718,14 @@ function prepareWorks(p) {
     }
   });
 
+  // Re-apply a column width the user dragged during a previous session, so
+  // it's part of `w` itself (and therefore travels with Export, not just
+  // this browser's localStorage).
+  p.works.forEach(w => {
+    const aw = parseFloat(localStorage.getItem(`asideWidth_${p.id}_${w.wid}`));
+    if (aw > 0) w.asideWidth = aw;
+  });
+
   // Remove single entries deleted in a previous session
   const dw = JSON.parse(localStorage.getItem(DELETED_WORKS_KEY) || '[]');
   if (dw.length) p.works = p.works.filter(w => !dw.includes(`${p.id}__${w.wid}`));
@@ -2758,19 +2771,19 @@ function enableCardDrag(card, pid) {
 // Draggable divider between a card's work and its analysis pane, so a short
 // excerpt next to a long analysis (or vice versa) can get more room. Width
 // is persisted per-work so it survives reopening the panel.
-function attachCardResizer(card, id, wid){
+function attachCardResizer(card, id, wid, w){
   const resizer = card.querySelector('.p-card-resizer');
   const aside = card.querySelector('.p-card-aside');
   if (!resizer || !aside) return;
 
-  const savedWidth = parseFloat(localStorage.getItem(`asideWidth_${id}_${wid}`));
-  if (savedWidth > 0) aside.style.width = savedWidth + 'px';
+  if (w && w.asideWidth > 0) aside.style.width = w.asideWidth + 'px';
+  resizer.classList.toggle('locked', !editMode);   // drag only works in Edit mode
 
   let startX = 0, startWidth = 0;
-  const clampWidth = (w) => {
+  const clampWidth = (val) => {
     const cardWidth = card.getBoundingClientRect().width || 600;
     const maxWidth = Math.max(160, cardWidth - 220);   // leave room for the work itself
-    return Math.min(maxWidth, Math.max(160, w));
+    return Math.min(maxWidth, Math.max(160, val));
   };
   const onMove = (e) => {
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -2783,9 +2796,12 @@ function attachCardResizer(card, id, wid){
     document.removeEventListener('touchend', onUp);
     resizer.classList.remove('resizing');
     document.body.style.userSelect = '';
-    safeSetItem(`asideWidth_${id}_${wid}`, parseFloat(aside.style.width));
+    const finalWidth = parseFloat(aside.style.width);
+    if (w) w.asideWidth = finalWidth;   // keep it on the work itself so Export bakes it in
+    safeSetItem(`asideWidth_${id}_${wid}`, finalWidth);
   };
   const onDown = (e) => {
+    if (!editMode) return;   // locked outside Edit mode
     e.preventDefault();
     startX = e.touches ? e.touches[0].clientX : e.clientX;
     startWidth = aside.getBoundingClientRect().width;
@@ -2799,7 +2815,9 @@ function attachCardResizer(card, id, wid){
   resizer.addEventListener('mousedown', onDown);
   resizer.addEventListener('touchstart', onDown, {passive:false});
   resizer.addEventListener('dblclick', () => {
+    if (!editMode) return;
     aside.style.width = '';
+    if (w) delete w.asideWidth;
     localStorage.removeItem(`asideWidth_${id}_${wid}`);
   });
 }

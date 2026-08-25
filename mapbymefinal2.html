@@ -803,7 +803,7 @@ body.edit-on #panel-pole-ctrl{display:inline-flex}
 .story-cta:hover{background:var(--red);border-color:var(--red);color:#fff;letter-spacing:.3em;}
 
 /* intro two-column layout so the whole page (incl. Ready) fits without scrolling */
-#intro-screen .story-wrap{max-width:1000px;padding:clamp(16px,2.6vh,32px) clamp(18px,4vw,54px) clamp(18px,2.6vh,32px);}
+#intro-screen .story-wrap{max-width:1100px;padding:clamp(8px,1.4vh,20px) clamp(18px,4vw,54px) clamp(8px,1.4vh,20px);}
 .intro-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;align-items:start;}
 .intro-col .legend{grid-template-columns:1fr;gap:9px;}
 .intro-col .story-samples{margin-bottom:0;}
@@ -816,9 +816,9 @@ body.edit-on #panel-pole-ctrl{display:inline-flex}
 /* INTRO — etymology wheel (bronze inscriptions → modern forms) */
 .ori-head{text-align:center;}
 .ori-kicker{font-size:9.5px;letter-spacing:.46em;text-transform:uppercase;color:rgba(242,237,227,.32);}
-.ori-title{font-family:'EB Garamond',serif;font-weight:500;font-size:clamp(19px,2.3vw,27px);line-height:1.15;margin:11px 0 0;color:rgba(242,237,227,.92);letter-spacing:.01em;}
+.ori-title{font-family:'EB Garamond',serif;font-weight:500;font-size:clamp(19px,2.3vw,27px);line-height:1.15;margin:7px 0 0;color:rgba(242,237,227,.92);letter-spacing:.01em;}
 .ori-title .han{font-family:'Noto Serif SC',serif;font-weight:400;}
-.ori-wheel{display:block;margin:clamp(4px,1.4vh,16px) auto 0;width:min(94vw,860px,calc((100vh - 365px) * 1.519));height:auto;}
+.ori-wheel{display:block;margin:clamp(0px,0.4vh,6px) auto 0;width:min(96vw,980px);height:auto;}
 .ori-wheel .ring{fill:none;stroke:rgba(242,237,227,.08);stroke-width:1;stroke-dasharray:2 10;}
 .ori-wheel image{-webkit-user-drag:none;}
 .ori-wheel .orb image{opacity:.8;}
@@ -830,10 +830,11 @@ body.edit-on #panel-pole-ctrl{display:inline-flex}
 .ori-wheel .leader{stroke:rgba(242,237,227,.28);stroke-width:1;}
 .ori-wheel .ann-t{font-family:'EB Garamond',serif;font-size:19.5px;letter-spacing:.02em;fill:rgba(242,237,227,.72);}
 .ori-wheel .ann-c{font-family:'EB Garamond',serif;font-style:italic;font-size:20px;letter-spacing:.02em;fill:rgba(242,237,227,.62);text-anchor:middle;}
-.ori-close{margin:clamp(10px,2vh,24px) auto 0;max-width:60ch;text-align:center;}
-.ori-emph{display:block;font-family:'Bodoni Moda',serif;font-weight:600;font-size:clamp(21px,2.7vw,32px);line-height:1.26;color:#f2ede3;letter-spacing:.004em;text-wrap:pretty;}
-.ori-ask{margin:clamp(11px,1.8vh,18px) auto 0;max-width:24ch;text-align:center;font-family:'Noto Serif SC',serif;font-size:clamp(13px,1.4vw,15.5px);letter-spacing:.06em;color:rgba(242,237,227,.5);}
-@media(max-width:820px){ .ori-wheel{width:min(98vw,440px,calc((100vh - 260px) * 1.519));} }
+.ori-close{margin:clamp(2px,0.6vh,8px) auto 0;max-width:60ch;text-align:center;}
+.ori-emph{display:block;font-family:'Bodoni Moda',serif;font-weight:600;font-size:clamp(13px,1.5vw,17px);line-height:1.15;color:#f2ede3;letter-spacing:.004em;text-wrap:pretty;}
+.ori-ask{margin:clamp(2px,0.6vh,6px) auto 0;max-width:none;white-space:nowrap;text-align:center;font-family:'Noto Serif SC',serif;font-size:clamp(12px,1.3vw,14.5px);letter-spacing:.06em;color:rgba(242,237,227,.5);}
+#intro-screen .story-cta{margin-top:8px;}
+@media(max-width:820px){ .ori-wheel{width:min(98vw,520px);} .ori-ask{white-space:normal;} }
 
 /* ABOUT THE TAGS — new page */
 #tags-screen{background:radial-gradient(120% 90% at 50% 20%,#1c1813 0%,#12100d 55%,#0a0907 100%);color:rgba(242,237,227,.9);}

@@ -635,6 +635,17 @@ body.edit-on .p-card-actions{display:inline-flex}
 }
 #panel-delete:hover{background:var(--red);color:#fff;border-color:var(--red)}
 
+#panel-pole-ctrl{display:none}
+body.edit-on #panel-pole-ctrl{display:inline-flex}
+#panel-pole-ctrl{
+  align-items:center;gap:6px;white-space:nowrap;
+  font-family:'EB Garamond',serif;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--red);
+}
+#panel-pole-ctrl input[type=range]{width:90px;accent-color:var(--red);cursor:pointer}
+#panel-pole-val{min-width:24px;text-align:right;font-variant-numeric:tabular-nums}
+
 .p-card-actions{
   margin-left:auto;align-items:center;gap:6px;
 }
@@ -1226,6 +1237,11 @@ body.edit-on .story.open .story-edit-hint{display:flex;}
       <span id="panel-loc"></span>
     </div>
     <div class="panel-header-actions">
+      <span id="panel-pole-ctrl" title="Adjust how tall this flag's pole rises above the map">
+        <label for="panel-pole">📏 Stick</label>
+        <input type="range" id="panel-pole" min="10" max="160" step="1" oninput="setPoleLength(this.value)">
+        <span id="panel-pole-val">22</span>
+      </span>
       <button id="panel-delete" onclick="deleteFlag(currentId)" title="Delete this entire flag and its pin">🗑 Delete flag</button>
       <button id="panel-close" onclick="closePanel()">×</button>
     </div>
@@ -1719,6 +1735,7 @@ function imgKey(id, wid){ return `image_${SV}_${id}_${wid}`; }
 // what made old content "come back from nowhere" after uploading to GitHub.
 // SV-scoping means a new export can never see an older export's saved edits.
 function posKey(id){ return `pos_${SV}_${id}`; }
+function poleKey(id){ return `pole_${SV}_${id}`; }
 function excerptKey(id, wid){ return `excerpt_${SV}_${id}_${wid}`; }
 function fullKey(id, wid){ return `full_${SV}_${id}_${wid}`; }
 function analysisKey(id, wid){ return `analysis_${SV}_${id}_${wid}`; }
@@ -1799,6 +1816,13 @@ const MARKERS = {};
   if (del.length) for (let i = PARTICIPANTS.length - 1; i >= 0; i--) {
     if (del.includes(PARTICIPANTS[i].id)) PARTICIPANTS.splice(i, 1);
   }
+  // Re-apply a pole (stick) length the user dragged during a previous
+  // session — kept on p.pole itself (not just localStorage) so it's part
+  // of PARTICIPANTS and Export bakes it into the downloaded file.
+  PARTICIPANTS.forEach(p => {
+    const po = parseFloat(readLS(poleKey(p.id), `pole_${p.id}`));
+    if (po > 0) p.pole = po;
+  });
 })();
 
 // ══════════════════════════════════════════
@@ -1939,6 +1963,14 @@ function destaggerPins(){
     });
   });
 
+  // A manually-set stick length (via the panel's Stick slider) always wins
+  // over the auto-clustering above — that's the whole point of giving the
+  // user control, e.g. to lift a flag that's covering another one behind it.
+  pts.forEach(p => {
+    const data = PARTICIPANTS.find(x => x.id === p.id);
+    if (data && data.pole > 0) p._pole = data.pole;
+  });
+
   pts.forEach(p => {
     const H = Math.max(10, Math.round(p._pole));
     const pole = p.el.querySelector('.pin-pole');
@@ -2042,6 +2074,13 @@ function openPanel(id) {
   locEl.onblur = () => saveLocation(id);
   locEl.contentEditable = editMode ? 'true' : 'false';
   locEl.classList.toggle('editable-on', editMode);
+
+  // Stick (pole) length slider — reflects this flag's current height so
+  // opening a different flag doesn't carry over the last one's value.
+  const poleVal = (p.pole > 0) ? p.pole : POLE_BASE;
+  const poleEl = document.getElementById('panel-pole');
+  poleEl.value = poleVal;
+  document.getElementById('panel-pole-val').textContent = Math.round(poleVal);
 
   // Build left side
   const left = document.getElementById('panel-left');
@@ -2251,6 +2290,19 @@ function saveLocation(id){
   if (!val) { el.textContent = p.location; return; }
   p.location = val;
   safeSetItem(locationKey(id), val);
+}
+
+// Live-adjust a flag's pole (stick) length from the panel slider — updates
+// the map immediately, keeps it on p.pole for Export, and saves it to
+// localStorage so it's still there next time this browser opens the file.
+function setPoleLength(val){
+  const p = PARTICIPANTS.find(x => x.id === currentId);
+  if (!p) return;
+  const n = Math.max(10, Math.min(160, Math.round(parseFloat(val)) || POLE_BASE));
+  p.pole = n;
+  document.getElementById('panel-pole-val').textContent = n;
+  safeSetItem(poleKey(currentId), n);
+  destaggerPins();
 }
 
 function closePanel() {
@@ -2628,6 +2680,7 @@ function deleteFlag(id){
   const ap = JSON.parse(localStorage.getItem(APPENDED_KEY) || '{}');
   if (ap[id]) { delete ap[id]; safeSetItem(APPENDED_KEY, JSON.stringify(ap)); }
   localStorage.removeItem(posKey(id));       localStorage.removeItem(`pos_${id}`);
+  localStorage.removeItem(poleKey(id));      localStorage.removeItem(`pole_${id}`);
   localStorage.removeItem(locationKey(id));  localStorage.removeItem(`location_${id}`);
   localStorage.removeItem(orderKey(id));     localStorage.removeItem(`order_${id}`);
   localStorage.removeItem(`analysis_${id}`);          // legacy flag-level
